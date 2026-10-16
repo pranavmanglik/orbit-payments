@@ -2,6 +2,10 @@
 
 - Load API keys and webhook secrets from a secret manager or deployment secret injection. The
   library has no default credentials and does not persist secrets.
+- Treat payment client tokens as sensitive, user-scoped continuation values. The shared
+  `PaymentSession` deliberately omits them from its representation, but applications must still
+  avoid logging model dumps, returning tokens to unauthorized users, or storing them longer than
+  the payment flow requires.
 - Verify signatures using the exact raw webhook body before parsing it or applying business state.
 - Never treat browser redirects or client-supplied payment status as authoritative.
 - Do not log raw webhook payloads, provider responses, client tokens, API credentials, or payment

@@ -8,7 +8,7 @@ adapter repositories.
 - Typed async payment and refund contracts.
 - Integer minor-unit amounts and immutable bounded metadata.
 - Normalized lifecycle states and verified webhook metadata.
-- Stripe and Razorpay adapters are separate packages and remain pre-alpha.
+- Stripe and Razorpay adapters are separate packages and remain alpha.
 - Provider-verified webhook ingress publishes a bounded envelope through `WorkPublisher`.
 
 ## Next work

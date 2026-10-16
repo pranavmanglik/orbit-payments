@@ -3,6 +3,7 @@
 Start with the [package README](../README.md) for installation, examples, and capability limits.
 
 - [Architecture and contract](architecture/overview.md)
+- [Architecture decisions](architecture/adr/README.md)
 - [Operations](operations/README.md)
 - [Durable webhook processing](operations/webhook-processing.md)
 - [Security](security/overview.md)

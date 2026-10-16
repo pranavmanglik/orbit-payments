@@ -84,11 +84,13 @@ class PaymentRequest(BaseModel):
     @field_validator("reference")
     @classmethod
     def validate_reference(cls, value: str) -> str:
+        """Reject references that are empty, oversized, or contain control characters."""
         return _safe_text(value, "Payment reference", 40)
 
     @field_validator("metadata", mode="before")
     @classmethod
     def validate_metadata(cls, value: object) -> dict[str, str]:
+        """Validate bounded string metadata and detach it from caller-owned mappings."""
         if not isinstance(value, Mapping) or len(value) > _MAX_METADATA_ITEMS:
             raise ValueError("Payment metadata must have at most 14 entries.")
         normalized: dict[str, str] = {}
@@ -122,22 +124,25 @@ class PaymentSession(BaseModel):
     amount_minor: StrictInt = Field(ge=0, le=10**12)
     currency: StrictStr = Field(min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
     status: PaymentStatus
-    client_token: StrictStr | None = Field(default=None, max_length=1024)
+    client_token: StrictStr | None = Field(default=None, max_length=1024, repr=False)
     created_at: datetime | None = None
 
     @field_validator("provider", "provider_id", "provider_resource")
     @classmethod
     def validate_identifiers(cls, value: str) -> str:
+        """Reject empty or control-bearing identifiers returned by a provider."""
         return _safe_text(value, "Payment provider identifier", 255)
 
     @field_validator("reference", "client_token")
     @classmethod
     def validate_optional_text(cls, value: str | None) -> str | None:
+        """Bound optional references and client continuation tokens."""
         return _safe_text(value, "Payment value", 1024) if value is not None else None
 
     @field_validator("created_at")
     @classmethod
     def validate_timestamp(cls, value: datetime | None) -> datetime | None:
+        """Require provider timestamps to identify an unambiguous timezone."""
         if value is not None and value.utcoffset() is None:
             raise ValueError("Payment timestamps must include timezone information.")
         return value
@@ -155,11 +160,13 @@ class RefundRequest(BaseModel):
     @field_validator("payment_id")
     @classmethod
     def validate_payment_id(cls, value: str) -> str:
+        """Reject empty, oversized, or control-bearing provider payment IDs."""
         return _safe_text(value, "Payment ID", 255)
 
     @field_validator("reference")
     @classmethod
     def validate_refund_reference(cls, value: str) -> str:
+        """Validate the stable merchant reference used to reconcile a refund."""
         return _safe_text(value, "Refund reference", 40)
 
 
@@ -190,16 +197,19 @@ class VerifiedWebhook(BaseModel):
     @field_validator("provider", "event_type")
     @classmethod
     def validate_required_text(cls, value: str) -> str:
+        """Require bounded provider and event names without control characters."""
         return _safe_text(value, "Webhook identifier", 255)
 
     @field_validator("event_id", "payment_id")
     @classmethod
     def validate_optional_ids(cls, value: str | None) -> str | None:
+        """Validate optional provider event and payment identifiers."""
         return _safe_text(value, "Webhook ID", 255) if value is not None else None
 
     @field_validator("occurred_at")
     @classmethod
     def validate_timestamp(cls, value: datetime | None) -> datetime | None:
+        """Require event timestamps, when present, to be timezone-aware."""
         if value is not None and value.utcoffset() is None:
             raise ValueError("Webhook timestamps must include timezone information.")
         return value
@@ -221,16 +231,19 @@ class WebhookEnvelope(BaseModel):
     @field_validator("provider", "account_id", "event_id", "event_type")
     @classmethod
     def validate_required_text(cls, value: str) -> str:
+        """Reject empty or control-bearing webhook envelope identifiers."""
         return _safe_text(value, "Webhook envelope identifier", 255)
 
     @field_validator("payment_id")
     @classmethod
     def validate_payment_id(cls, value: str | None) -> str | None:
+        """Validate an optional payment identifier extracted from the event."""
         return _safe_text(value, "Webhook payment ID", 255) if value is not None else None
 
     @field_validator("occurred_at")
     @classmethod
     def validate_timestamp(cls, value: datetime | None) -> datetime | None:
+        """Require event timestamps, when present, to be timezone-aware."""
         if value is not None and value.utcoffset() is None:
             raise ValueError("Webhook timestamps must include timezone information.")
         return value
@@ -238,6 +251,7 @@ class WebhookEnvelope(BaseModel):
     @field_validator("raw_body")
     @classmethod
     def validate_raw_body(cls, value: bytes) -> bytes:
+        """Require nonempty raw bytes so provider signatures remain verifiable."""
         if not isinstance(value, bytes) or not value:
             raise ValueError("Webhook raw_body must contain nonempty bytes.")
         return value

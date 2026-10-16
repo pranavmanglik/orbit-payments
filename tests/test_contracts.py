@@ -47,3 +47,18 @@ def test_payment_session_requires_timezone_aware_timestamp() -> None:
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
     )
     assert valid.created_at is not None and valid.created_at.utcoffset().total_seconds() == 0
+
+
+def test_payment_session_repr_does_not_expose_client_token() -> None:
+    session = PaymentSession(
+        provider="stripe",
+        provider_id="pi_123",
+        provider_resource="payment_intent",
+        amount_minor=1250,
+        currency="USD",
+        status=PaymentStatus.REQUIRES_ACTION,
+        client_token="pi_123_secret_sensitive-token",
+    )
+
+    assert "pi_123_secret_sensitive-token" not in repr(session)
+    assert session.client_token == "pi_123_secret_sensitive-token"
